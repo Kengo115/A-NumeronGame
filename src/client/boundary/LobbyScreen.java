@@ -16,16 +16,17 @@ public class LobbyScreen extends JPanel implements ActionListener{
 	/** ユーザ情報ボタン */
 	JButton rewardButton;
 	private Image backgroundImage;
-	Controller controller = new Controller();
+	Controller controller;
 	//コンストラクタ
-	public LobbyScreen() {
+	public LobbyScreen(Controller controller) {
 		super();
+		this.controller = controller;
 		try {
 			this.setLayout(null);
 
             logoutButton = new JButton("ユーザ切り替え/ログアウト");
             logoutButton.addActionListener(this); //リスナーをこのクラスに登録(実際はバウンダリコントローラに登録?)
-            Font font1 = new Font("Arial", Font.BOLD, 12); //ボタンの中の文字のフォント
+            Font font1 = new Font("SansSerif", Font.BOLD, 12); //ボタンの中の文字のフォント
             logoutButton.setFont(font1);
             // 背景色を水色に設定
             logoutButton.setOpaque(true); // ボタンの透明度を有効にする
@@ -42,7 +43,7 @@ public class LobbyScreen extends JPanel implements ActionListener{
 
             ruleButton = new JButton("ルール説明");
             ruleButton.addActionListener(this);
-            Font font2 = new Font("Arial", Font.BOLD, 12);
+            Font font2 = new Font("SansSerif", Font.BOLD, 12);
             ruleButton.setFont(font2);
             Color yellowGreenColor = new Color(154, 205, 50);
             ruleButton.setBackground(yellowGreenColor);
@@ -51,7 +52,7 @@ public class LobbyScreen extends JPanel implements ActionListener{
             
             matchingButton = new JButton("オンラインマッチング");
             matchingButton.addActionListener(this);
-            Font font3 = new Font("Arial", Font.BOLD, 20);
+            Font font3 = new Font("SansSerif", Font.BOLD, 20);
             matchingButton.setFont(font3);
             matchingButton.setBackground(Color.CYAN);
             matchingButton.setBounds(700,100,250,70);
@@ -59,7 +60,7 @@ public class LobbyScreen extends JPanel implements ActionListener{
             
             rewardButton = new JButton("ユーザ情報");
             rewardButton.addActionListener(this);
-            Font font4 = new Font("Arial", Font.BOLD, 25);
+            Font font4 = new Font("SansSerif", Font.BOLD, 25);
             rewardButton.setFont(font4);
             // ボタンの背景色を肌色に設定
             Color skinColor = new Color(255, 218, 185);
@@ -92,10 +93,12 @@ public class LobbyScreen extends JPanel implements ActionListener{
 	}
 	public void pushRuleButton() {
 		//ここにルール説明ボタンが押された後の処理を書く
+		controller.getRecord();
 		controller.screenTransition("rule");
 	}
 	public void pushMatchingButton() {
 		//ここにマッチングボタンが押された後の処理を書く
+		controller.match();
 		controller.screenTransition("matchWait");
 	}
 	public void pushRewardButton() {

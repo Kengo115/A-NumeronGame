@@ -14,16 +14,17 @@ public class LogoutScreen extends JPanel implements ActionListener{
     JButton cancelButton;
 
     private Image backgroundImage;
-    Controller controller = new Controller();
+    Controller controller;
     //コンストラクタ
-    public LogoutScreen() {
+    public LogoutScreen(Controller controller) {
         super();
+        this.controller = controller;
         try {
             this.setLayout(null);
 
             okButton = new JButton("ok");
             okButton.addActionListener(this); //リスナーをこのクラスに登録(実際はバウンダリコントローラに登録?)
-            Font font1 = new Font("Arial", Font.BOLD, 20); //ボタンの中の文字のフォント
+            Font font1 = new Font("SansSerif", Font.BOLD, 20); //ボタンの中の文字のフォント
             okButton.setFont(font1);
             // 背景色を青色に設定
             okButton.setOpaque(true); // ボタンの透明度を有効にする

@@ -10,19 +10,20 @@ import java.awt.event.ActionListener;
 public class RuleScreen extends JPanel implements ActionListener{
 	/** 戻るボタン*/
 	JButton returnButton;
-	Controller controller = new Controller();
+	Controller controller;
 	private Image backgroundImage;
 
 
 	//コンストラクタ
-	public RuleScreen() {
+	public RuleScreen(Controller controller) {
 		super();
+		this.controller = controller;
 		try {
 			this.setLayout(null);
 
             returnButton = new JButton("<戻る");
             returnButton.addActionListener(this); //リスナーをこのクラスに登録(実際はバウンダリコントローラに登録?)
-            Font font1 = new Font("Arial", Font.BOLD, 20); //ボタンの中の文字のフォント
+            Font font1 = new Font("SansSerif", Font.BOLD, 20); //ボタンの中の文字のフォント
             returnButton.setFont(font1);
             // 背景色を水色に設定
             returnButton.setOpaque(true); // ボタンの透明度を有効にする

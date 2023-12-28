@@ -11,15 +11,16 @@ public class MatchingWaitScreen extends JPanel implements ActionListener{
 	/** 戻るボタン*/
 	JButton cancelButton;
 	private Image backgroundImage;
-	Controller controller = new Controller();
+	Controller controller;
 	//コンストラクタ
-	public MatchingWaitScreen() {
+	public MatchingWaitScreen(Controller controller) {
 		super();
+		this.controller = controller;
 		try {
 			this.setLayout(null);
             cancelButton = new JButton("キャンセル");
             cancelButton.addActionListener(this); //リスナーをこのクラスに登録(実際はバウンダリコントローラに登録?)
-            Font font1 = new Font("Arial", Font.BOLD, 20); //ボタンの中の文字のフォント
+            Font font1 = new Font("SansSerif", Font.BOLD, 20); //ボタンの中の文字のフォント
             cancelButton.setFont(font1);
             // 背景色を水色に設定
             cancelButton.setOpaque(true); // ボタンの透明度を有効にする
@@ -56,6 +57,7 @@ public class MatchingWaitScreen extends JPanel implements ActionListener{
 		 * 本来は画面が遷移する
 		 * バウンダリコントローラから指示?
 		 */
+		controller.cancelMatching();
 		controller.screenTransition("lobby");
 	}
 	public void actionPerformed(ActionEvent ae) {

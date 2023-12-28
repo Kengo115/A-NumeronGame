@@ -1,10 +1,24 @@
 package client.boundary;
 
-import client.controller.Controller;
-import javax.swing.*;
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Image;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JPasswordField;
+import javax.swing.JTextField;
+import javax.swing.UIManager;
+
+import client.controller.Controller;
 
 public class LoginScreen extends JPanel implements ActionListener{
     /** ログインボタン */
@@ -15,6 +29,8 @@ public class LoginScreen extends JPanel implements ActionListener{
     JLabel userNameLabel;
     /** パスワード入力欄用ラベル */
     JLabel passwordLabel;
+    /** エラーメッセージラベル  */
+    JLabel errorLabel = new JLabel();
     /** ユーザ名入力欄 */
     JTextField userNameField;
     /** パスワード入力欄 */
@@ -22,17 +38,20 @@ public class LoginScreen extends JPanel implements ActionListener{
     /** 背景画像 */
     private Image backgroundImage;
     /** コントローラ */
-    Controller controller = new Controller();
+    Controller controller;
+    /** コンポーネント */
+    Component[] components;
 
     //コンストラクタ
-    public LoginScreen() {
+    public LoginScreen(Controller controller) {
         super();
+        this.controller = controller;
         try {
             this.setLayout(null);
 
             loginButton = new JButton("ログイン->");
             loginButton.addActionListener(this); //リスナーをこのクラスに登録(実際はバウンダリコントローラに登録?)
-            Font font1 = new Font("Arial", Font.BOLD, 12); //ボタンの中の文字のフォント
+            Font font1 = new Font("SansSerif", Font.BOLD, 12); //ボタンの中の文字のフォント
             loginButton.setFont(font1);
             loginButton.setContentAreaFilled(false); // ボタンの透明度を有効にする
             try {
@@ -42,7 +61,7 @@ public class LoginScreen extends JPanel implements ActionListener{
             }
             loginButton.setForeground(Color.WHITE);
             //JButtonの座標とサイズを指定
-            loginButton.setBounds(870,450,80,50);
+            loginButton.setBounds(870,450,95,50);
             this.add(loginButton);
 
             backButton = new JButton("<-戻る");
@@ -58,7 +77,7 @@ public class LoginScreen extends JPanel implements ActionListener{
             userNameLabel.setForeground(Color.WHITE);
             userNameLabel.setBounds(700, 100, 250,40);
             userNameField = new JTextField(1); // 1行のテキストフィールド
-            userNameField.setFont(new Font("Arial",Font.BOLD, 16));
+            userNameField.setFont(new Font("SansSerif",Font.BOLD, 16));
             userNameField.setForeground(Color.WHITE);  // 白文字
             userNameField.setBackground(Color.WHITE);  // 白枠
             userNameField.setCaretColor(Color.WHITE);  // キャレット白
@@ -73,7 +92,7 @@ public class LoginScreen extends JPanel implements ActionListener{
             passwordLabel.setForeground(Color.WHITE);
             passwordLabel.setBounds(700, 220, 250,40);
             passwordField = new JPasswordField(1);
-            passwordField.setFont(new Font("Arial",Font.BOLD, 16));
+            passwordField.setFont(new Font("SansSerif",Font.BOLD, 16));
             passwordField.setForeground(Color.WHITE);
             passwordField.setBackground(Color.WHITE);
             passwordField.setCaretColor(Color.WHITE);
@@ -81,7 +100,7 @@ public class LoginScreen extends JPanel implements ActionListener{
             passwordField.setBounds(700, 260, 250, 40);
             passwordField.setMargin(new Insets(0,5,0,0));
             this.add(passwordLabel);
-            this.add(passwordLabel);
+            this.add(passwordField);
 
             String imagePath = "Numeron.png";
             backgroundImage = new ImageIcon(getClass().getResource(imagePath)).getImage();
@@ -104,25 +123,59 @@ public class LoginScreen extends JPanel implements ActionListener{
         g.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
     }
 
-    public void displayError(){
+    public void displayError(int type){
+
+        switch (type){
+            case 1:
+                errorLabel.setText("全て入力してください");
+                break;
+            case 2:
+                errorLabel.setText("ユーザ名またはパスワードが違います");
+                break;
+        }
+        errorLabel.setForeground(Color.RED);
+        errorLabel.setBounds(700,310,280,40);
+
+
+        // エラーメッセージラベルが表示されているか確認
+        this.components = this.getComponents();
+        for(Component component : components){
+            if(component != errorLabel){
+                this.add(errorLabel);    // エラーメッセージを追加
+            }
+        }
+        repaint();  // 画面を更新
         System.out.println("ログイン失敗");
     }
 
     public void pushLoginButton(){
         // ログインボタンが押された後の処理を書く
         String username = userNameField.getText();
-        String password = passwordField.getText();
+        String password = new String(passwordField.getPassword());
 
-        // IDとパスワードの認証処理を書く
-        if(controller.login(username, password)){
-            controller.screenTransition("lobby");
-        }else{
-            this.displayError();
+        if(username.equals("") || password.equals("")){
+            // 空欄がある場合エラーを表示
+            this.displayError(1);
+        }
+        else{
+        	//ログイン処理を行う
+        	controller.login(username, password);
         }
     }
 
     public void pushBackButton(){
         // 戻るボタンが押された後の処理を書く
+
+        // エラーメッセージラベルが表示されているか確認
+        this.components = this.getComponents();
+        for(Component component : components){
+            if(component == errorLabel){
+                this.remove(errorLabel);    // エラーメッセージを削除
+            }
+        }
+
+        userNameField.setText(null);    // 入力をクリア
+        passwordField.setText(null);
         controller.screenTransition("title");
     }
 

@@ -19,7 +19,7 @@ public class WebSocketManager {
 	}
 
 	public boolean isConnected() { //接続確認
-		return session.isOpen();
+		return session != null && session.isOpen();
 	}
 
 	public void sendMessage(String text) { //メッセージを送る
@@ -33,8 +33,18 @@ public class WebSocketManager {
 	public boolean connect() { //接続処理
 		try {
 			session = container.connectToServer(new WebSocketEndpoint(), uri);
+			
+			//デバック
+	    	System.out.println("接続成功");
+			
 			return true;
 		} catch (Exception e) {
+			
+			//デバック
+	    	System.out.println("接続失敗");
+	    	System.out.println(e);
+	    	
+	    	
 			return false;
 		}
 	}

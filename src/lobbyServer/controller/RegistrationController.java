@@ -6,10 +6,13 @@ public class RegistrationController {
 
     // 新しいユーザーを登録するメソッド
     public boolean registUser(String userName, String password) {
+    	
+    	//デバック
+    	System.out.println("会員登録コントローラー到達");
 
         // DataBaseController のインスタンスを作成
         DataBaseController dataBaseController = new DataBaseController();
 
-        return dataBaseController.executeQueryForSignin("INSERT INTO users (username, password) VALUES ('" + userName + "', '" + password + "')");
+        return dataBaseController.executeQueryForSignin("INSERT INTO UserList (UserName, password, isLoggedIn) VALUES ('" + userName + "', '" + password + "', TRUE)");
     }
 }

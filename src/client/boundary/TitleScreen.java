@@ -22,18 +22,17 @@ public class TitleScreen extends JPanel implements ActionListener{
 	JButton signinButton;
 	private Image backgroundImage;
 
-	Controller controller = new Controller();
-
+	Controller controller;
 	//コンストラクタ
-	public TitleScreen() {
+	public TitleScreen(Controller controller) {
 		super();
-
+		this.controller = controller;
 		try {
 			this.setLayout(null);
 
 			loginButton = new JButton("ログイン");
 			loginButton.addActionListener(this); //リスナーをこのクラスに登録(実際はバウンダリコントローラに登録?)
-			Font font1 = new Font("Arial", Font.BOLD, 35); //ボタンの中の文字のフォント
+			Font font1 = new Font("SansSerif", Font.BOLD, 35); //ボタンの中の文字のフォント
 			loginButton.setFont(font1);
 			// 背景色を水色に設定
 			loginButton.setOpaque(true); // ボタンの透明度を有効にする
@@ -53,7 +52,7 @@ public class TitleScreen extends JPanel implements ActionListener{
 			signinButton.setBackground(new Color(0, 0, 0, 0));
 			// ボーダーの設定を透明にする
 			signinButton.setBorderPainted(false);
-			Font font2 = new Font("Arial", Font.BOLD, 15);
+			Font font2 = new Font("SansSerif", Font.BOLD, 15);
 			signinButton.setFont(font2);
 			signinButton.setForeground(Color.ORANGE);
 			signinButton.setBounds(650,180,250,30);
