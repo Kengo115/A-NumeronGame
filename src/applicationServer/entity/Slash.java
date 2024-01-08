@@ -1,16 +1,14 @@
 package applicationServer.entity;
 
 import Message.ItemMessage;
-import Message.TargetMessage;
 import applicationServer.controller.ApplicationController;
 
 public class Slash extends Item {
     String result;
     Player player;
-    ApplicationController applicationController;
     @Override
     public ItemMessage useItem(ItemMessage message){
-        player = applicationController.getPlayer(message.username);
+        player = ApplicationController.getPlayer(message.username);
         String[] opponentNumberArray = player.opponentNumber.split("");
         int max = Integer.parseInt(opponentNumberArray[0]);
         int min = Integer.parseInt(opponentNumberArray[0]);
@@ -23,10 +21,6 @@ public class Slash extends Item {
         result = String.valueOf(value);
         ItemMessage itemMessage = new ItemMessage(message.demandType, message.username, message.itemName, result);
         return itemMessage;
-    }
-
-    public TargetMessage useTarget(TargetMessage message){
-        return null;
     }
 
 }

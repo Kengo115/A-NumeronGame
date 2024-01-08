@@ -11,6 +11,11 @@ import com.google.gson.Gson;
 import Message.Certification;
 import Message.Message;
 import Message.PlayFirstMessage;
+import Message.ItemMessage;
+import Message.CallMessage;
+import Message.ResultMessage;
+import Message.ErrorGameEndMessage;
+import Message.RecordMessage;
 import client.controller.Controller;
 
 
@@ -20,6 +25,7 @@ public class WebSocketEndpoint {
 	static ClientCommunication clientCommunication; //クライアントコミュニケーション
 	
 	static Controller controller;
+
 	
 	//コントローラー同期
 	public void synchroController(Controller controller) {
@@ -77,7 +83,7 @@ public class WebSocketEndpoint {
         		}
         		break;
         	case "Logout"://ログアウト
-        		 controller.screenTransition("title");
+				controller.screenTransition("title");
         		clientCommunication.LSDisconnect();
         		break;
 			case "Matching"://マッチング開始
@@ -90,13 +96,65 @@ public class WebSocketEndpoint {
 				PlayFirstMessage playFirstMessage = gson.fromJson(message, PlayFirstMessage.class);
 				if(playFirstMessage.playFirst) { //先攻の時
 					System.out.println("あなたは先攻です");
+					controller.getOrder(true);
 				}
 				else { //後攻の時
 					System.out.println("あなたは後攻です");
+					controller.getOrder(false);
 				}
+				break;
+			case "Item"://アイテム使用
+				ItemMessage itemMessage = gson.fromJson(message, ItemMessage.class);
+				//自分のアイテムか相手のアイテムか確認
+				boolean myItemUse;
+				myItemUse = ClientCommunication.username.equals(itemMessage.username);
+				controller.displayItemResult(itemMessage.itemName, itemMessage.result,myItemUse);//アイテム結果表示
+				break;
+			case "Call"://コール
+				CallMessage callMessage = gson.fromJson(message,CallMessage.class);
+				//自分のコールか相手のコールか確認
+				boolean MyCall;
+                MyCall = ClientCommunication.username.equals(callMessage.username);
+				controller.displayCallResult(callMessage.callNumber,callMessage.EAT,callMessage.BITE,MyCall);
+				break;
+			case "Result"://ゲーム結果
+				ResultMessage resultMessage = gson.fromJson(message,ResultMessage.class);
+				if(resultMessage.winUser.equals("draw")) { //引き分けの場合
+					controller.displayResult(resultMessage.username1,resultMessage.username2,resultMessage.winUser,3);
+				}
+				else if(resultMessage.winUser.equals(ClientCommunication.getUsername())) { //勝ちの場合
+					controller.displayResult(resultMessage.username1,resultMessage.username2,resultMessage.winUser,1);
+				}
+				else { //負けの場合
+					controller.displayResult(resultMessage.username1,resultMessage.username2,resultMessage.winUser,2);
+				}
+				break;
+			case "ErrorGameEnd"://制限時間が経過する、対戦を離脱する
+				ErrorGameEndMessage errorGameEndMessage = gson.fromJson(message,ErrorGameEndMessage.class);
+				
+				if(ClientCommunication.username.equals(errorGameEndMessage.normalUser)){
+
+					controller.displayError("対戦相手がいなくなりました。");
+				}
+				else{
+
+					controller.displayError("制限時間が経過しました。");
+					clientCommunication.LSDisconnect();
+				}
+				break;
+
+			case "Record"://戦績表示をする
+				RecordMessage recordMessage = gson.fromJson(message,RecordMessage.class);
+				controller.displayRecord(recordMessage.rate,recordMessage.winCount,recordMessage.loseCount,recordMessage.drawCount);
+				break;
+
+			case "SetNumber": //相手が設定ナンバーを送信したことを受け取る
+				controller.opponentSetComplete();
 				break;
         	default:
         		System.out.println("無効な要求です。");
+
+
         }	
 	}
 
@@ -106,8 +164,6 @@ public class WebSocketEndpoint {
 	}
 
 	@OnClose //切断時の処理
-	public void onClose(Session session) {
-		System.out.println("[client] onClose: " + session.getId());
-	}
+	public void onClose(Session session) {System.out.println("[client] onClose: " + session.getId());}
 
 }

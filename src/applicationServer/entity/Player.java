@@ -9,6 +9,8 @@ public class Player {
     int EAT; /**直前のEAT数を保存する*/
     int BITE;
 
+    boolean isWin = false;
+
     public void setUserName(String userName){
         this.userName = userName;
     }
@@ -25,6 +27,10 @@ public class Player {
         this.EAT = EAT;
         this.BITE = BITE;
     }
+    public void setIsWin(boolean isWin){
+        this.isWin = isWin;
+    }
+
 
     public String getUserName(){
         return userName;
@@ -35,6 +41,6 @@ public class Player {
     public int getEAT(){
         return EAT;
     }
-
     public  int getTurnOrder() { return  turnOrder;}
+    public boolean getIsWin() { return isWin;}
 }

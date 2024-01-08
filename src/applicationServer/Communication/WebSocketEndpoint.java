@@ -30,7 +30,7 @@ public class WebSocketEndpoint {
         //デバック
         System.out.println("アプリケーションサーバ開通");
 
-        ConnectedUser connectedUser = new ConnectedUser(" ",session);
+        ConnectedUser connectedUser = new ConnectedUser(null,session);
         connectedUserList.add(connectedUser);
         System.out.println("[WebSocketServer] onOpen:" + session.getId());
     }
@@ -42,13 +42,27 @@ public class WebSocketEndpoint {
         String messageToJson; //メッセージをJsonでString型にしたもの
 
         //デバック
-        System.out.println("ロビーサーバデータ受信");
+        System.out.println("アプリケーションサーバデータ受信");
+
+
 
         // メッセージクラスに変換：String -> Message
         Message receivedMessage = gson.fromJson(message, Message.class);
 
         //デバック
         System.out.println("メッセージクラスへ変換");
+
+        //もしまだConnectedUserのユーザーネームの登録がされていない場合はする。
+        for(ConnectedUser connectedUser : connectedUserList) {
+            if(connectedUser.session == session) {
+                if(connectedUser.username == null) {
+                    connectedUser.username = receivedMessage.username;
+                }
+            }
+        }
+
+        //デバック
+        System.out.println("ユーザー登録完了");
 
 
         switch (receivedMessage.demandType) {//受け取った要求に応じて変化
@@ -57,6 +71,7 @@ public class WebSocketEndpoint {
 
                 //デバック
                 System.out.println("プレイヤー取得");
+                System.out.println("プレイヤー名="+player.getUserName());
 
                 PlayFirstMessage playFirstMessage = gson.fromJson(message, PlayFirstMessage.class);
 
@@ -65,9 +80,13 @@ public class WebSocketEndpoint {
 
                 if(player.getTurnOrder() == 0) {
                     // メッセージクラスに変換：String -> PlayFirstMessage
+                    //デバック
+                    System.out.println(player.getUserName()+"は先攻です");
                     playFirstMessage.playFirst = true;
                 }
                 else {
+                    //デバック
+                    System.out.println(player.getUserName()+"は後攻です");
                     playFirstMessage.playFirst = false;
                 }
                 sendMessage(session,gson.toJson(playFirstMessage));
@@ -76,11 +95,24 @@ public class WebSocketEndpoint {
                 // SetNumberの場合の処理
                 SetNumberMessage setNumberMessage  = gson.fromJson(message, SetNumberMessage.class);
                 applicationController.setNumber(setNumberMessage);
+
+                //デバック
+                System.out.println("設定ナンバーの登録成功");
+
+                applicationController.changeTurn(setNumberMessage.username);
+
+
+                //対戦相手に設定ナンバーを送ったことを送信
+                sendMessageToOpponent(applicationController.getOpponentUsername(setNumberMessage.username),message);
                 break;
             case "Call":
                 // Callの場合の処理
                 CallMessage callMessage  = gson.fromJson(message, CallMessage.class);
                 callMessage = applicationController.determineEATAndBITE(callMessage);
+                if(callMessage==null) { //ゲーム終了時
+                    return;
+                }
+                applicationController.changeTurn(callMessage.username);
                 messageToJson  = gson.toJson(callMessage);
                 sendMessage(session,messageToJson);
                 //対戦相手の名前を調べる
@@ -91,14 +123,12 @@ public class WebSocketEndpoint {
             case "Item":
                 // Itemの場合の処理
                 ItemMessage itemMessage  = gson.fromJson(message, ItemMessage.class);
-                TargetMessage targetMessage = gson.fromJson(message, TargetMessage.class);
-                if(itemMessage.itemName == "Target"){
-                    targetMessage = applicationController.useTarget(targetMessage);
-                    messageToJson = gson.toJson(targetMessage);
-                }else {
-                    itemMessage = applicationController.useItem(itemMessage);
-                    messageToJson = gson.toJson(itemMessage);
-                }
+
+                //デバック
+                System.out.println("アイテムメッセージ変換");
+
+                itemMessage = applicationController.useItem(itemMessage);
+                messageToJson = gson.toJson(itemMessage);
                 sendMessage(session,messageToJson);
                 //対戦相手の名前を調べる
                 opponentUsername = applicationController.getOpponentUsername(itemMessage.username);
@@ -118,8 +148,6 @@ public class WebSocketEndpoint {
         for (ConnectedUser connectedUser : connectedUserList) {
             if (connectedUser.session.equals(session)) {
                 String closeUsername = connectedUser.username;
-                //いたらそのユーザーを接続ユーザーのリストから外す
-                connectedUserList.remove(connectedUser);
                 //対戦相手を探す
                 String opponentUsername = applicationController.getOpponentUsername(closeUsername);
                 if(opponentUsername == null) {
@@ -127,10 +155,25 @@ public class WebSocketEndpoint {
                     return;
                 }
                 ErrorGameEndMessage errorGameEndMessage = new ErrorGameEndMessage("ErrorGameEnd",closeUsername,opponentUsername);
+                System.out.println("エラーゲームエンドメッセージ作成");
+
                 applicationController.handleTimeout(errorGameEndMessage);
 
+                System.out.println("handleTimeout完了");
+
                 //対戦相手にエラーメッセージを送る
-                sendMessageToOpponent(closeUsername,gson.toJson(errorGameEndMessage));
+                sendMessageToOpponent(opponentUsername,gson.toJson(errorGameEndMessage));
+                System.out.println("対戦相手にエラーメッセージを送る");
+
+                //対戦相手の切断処理を行う
+                disconnectConnection(opponentUsername);
+
+                //対象のユーザーを接続ユーザーのリストから外す
+                connectedUserList.remove(connectedUser);
+
+                //部屋を解散する
+                applicationController.deleteRoom(applicationController.getPlayer(closeUsername));
+                System.out.println("部屋を解散する");
             }
         }
 
@@ -185,6 +228,13 @@ public class WebSocketEndpoint {
         //プレイヤー2のセッションを調べて結果を送信する
         Session player2Session = getSession(resultMessage.username2);
         sendMessage(player2Session,messageToJson);
+
+        //部屋閉じる
+        applicationController.deleteRoom(applicationController.getPlayer(resultMessage.username1));
+
+        //両者の切断処理を行う
+        disconnectConnection(resultMessage.username1);
+        disconnectConnection(resultMessage.username2);
     }
 
     //時間超過を送信する
@@ -199,16 +249,23 @@ public class WebSocketEndpoint {
         ErrorGameEndMessage errorGameEndMessage = new ErrorGameEndMessage("ErrorGameEnd",timeoutUsername,opponentUsername);
         applicationController.handleTimeout(errorGameEndMessage);
 
-        //対戦相手にエラーメッセージを送る
+        //切断者と対戦相手にエラーメッセージを送る
         sendMessageToOpponent(timeoutUsername,gson.toJson(errorGameEndMessage));
+        sendMessage(getSession(timeoutUsername),gson.toJson(errorGameEndMessage));
 
+        //部屋閉じる
+        applicationController.deleteRoom(applicationController.getPlayer(timeoutUsername));
+
+        //両者の切断処理を行う
+        disconnectConnection(timeoutUsername);
+        disconnectConnection(opponentUsername);
     }
 
     //サーバ側から対象のユーザ名のユーザを切断する
-    public void disconnectConnection(Session session) {
+    public void disconnectConnection(String username) {
         try {
-            session.close();
-            connectedUserList.removeIf(connectedUser -> connectedUser.session.equals(session));
+            getSession(username).close();
+            connectedUserList.removeIf(connectedUser -> connectedUser.username.equals(username));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

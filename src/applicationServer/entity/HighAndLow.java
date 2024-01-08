@@ -1,7 +1,6 @@
 package applicationServer.entity;
 
 import Message.ItemMessage;
-import Message.TargetMessage;
 import applicationServer.controller.ApplicationController;
 
 public class HighAndLow extends Item {
@@ -12,8 +11,15 @@ public class HighAndLow extends Item {
     ApplicationController applicationController;
     @Override
     public ItemMessage useItem(ItemMessage message){
-        player = applicationController.getPlayer(message.username);
+        //デバック
+        System.out.println("HighAndLow.useItem到達");
+
+        player = ApplicationController.getPlayer(message.username);
         String[] opponentNumberArray = player.opponentNumber.split("");
+
+        //デバック
+        System.out.println("相手のナンバー分割成功");
+
         for(int i = 0; i < opponentNumberArray.length; i++) {
             int digit = Integer.parseInt(opponentNumberArray[i]);
 
@@ -27,9 +33,10 @@ public class HighAndLow extends Item {
             }
         }
         ItemMessage itemMessage = new ItemMessage(message.demandType, message.username, message.itemName, result);
+
+        //デバック
+        System.out.println("アイテムメッセージ到達"+result);
+
         return itemMessage;
-    }
-    public TargetMessage useTarget(TargetMessage message){
-        return null;
     }
 }

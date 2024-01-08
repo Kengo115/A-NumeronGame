@@ -20,11 +20,11 @@ public class GameController {
     Item Target = new Target();
     String Item1 = "HighAndLow";
     String Item2 = "Slash";
-    String Item3 = "TargetMessage";
-    int EAT;
-    int BITE;
+    String Item3 = "Target";
 
-    Message message;
+    GameTimer gameTimer = new GameTimer(this);
+
+
 
     public GameController(Player player1, Player player2){
         this.player1 = player1;
@@ -32,15 +32,20 @@ public class GameController {
         determineTurnOrder();
     }
 
-    public void setMessage(Message message){
-        this.message = message;
-    }
     public int getTurn(){
         return turn;
     }
 
     public int getIsWinner(){
         return isWinner;
+    }
+
+    public Player getFirstPlayer() {
+        return firstPlayer;
+    }
+
+    public Player getSecondPlayer() {
+        return  secondPlayer;
     }
 
     /**先行か後攻か決めるメソッド*/
@@ -50,13 +55,13 @@ public class GameController {
         rand = random.nextInt(2);
 
         if(rand == 0){
-            this.player1.setTurnOrder(rand);
-            this.player2.setTurnOrder(rand+1);
+            this.player1.setTurnOrder(0);
+            this.player2.setTurnOrder(1);
             firstPlayer = player1;
             secondPlayer = player2;
         }else{
-            this.player2.setTurnOrder(rand-1);
-            this.player1.setTurnOrder(rand);
+            this.player2.setTurnOrder(0);
+            this.player1.setTurnOrder(1);
             firstPlayer = player2;
             secondPlayer = player1;
         }
@@ -64,11 +69,13 @@ public class GameController {
 
     /** CALL結果を渡すメソッド*/
     public CallMessage determineEATAndBITE(CallMessage message){
-        if(message.username == player1.getUserName()){
+        int EAT = 0;
+        int BITE = 0;
+        if(message.username.equals(player1.getUserName())){
             String[] predictArray = message.callNumber.split("");
             String[] enemyNumArray = this.player2.getMyNumber().split("");
-            for(int i = 1; i < predictArray.length; ++i) {
-                for(int j = 1; j < predictArray.length; ++j) {
+            for(int i = 0; i < predictArray.length; ++i) {
+                for(int j = 0; j < predictArray.length; ++j) {
                     if (predictArray[i].equals(enemyNumArray[j])) {
                         if (i == j) {
                             ++EAT;
@@ -79,11 +86,11 @@ public class GameController {
                 }
             }
             player1.setEATAndBITE(EAT, BITE);
-        }else if(message.username == player2.getUserName()){
+        }else if(message.username.equals(player2.getUserName())){
             String[] predictArray = message.callNumber.split("");
             String[] enemyNumArray = this.player1.getMyNumber().split("");
-            for(int i = 1; i < predictArray.length; ++i) {
-                for(int j = 1; j < predictArray.length; ++j) {
+            for(int i = 0; i < predictArray.length; ++i) {
+                for(int j = 0; j < predictArray.length; ++j) {
                     if (predictArray[i].equals(enemyNumArray[j])) {
                         if (i == j) {
                             ++EAT;
@@ -102,16 +109,20 @@ public class GameController {
 
     /**ゲームが終了したかどうか判断するメソッド*/
     public boolean isFinish(){
-        if (isWinner == 0) {
-            // 先攻が3EATの場合
-            if (turn % 2 == 0 && firstPlayer.getEAT() == 3) {
-                isWinner += 1;
-            }
-            // 後攻が3EATの場合
-            else if (turn % 2 != 0 && secondPlayer.getEAT() == 3) {
-                isWinner += 2;
-            }
+        // 先攻が3EATの場合
+        isWinner =0;
+        if (firstPlayer.getEAT() == 3) {
+            isWinner += 1;
         }
+        // 後攻が3EATの場合
+        if (secondPlayer.getEAT() == 3) {
+            isWinner += 2;
+        }
+
+        //デバック
+        System.out.println("turn ="+turn);
+        System.out.println("firstPlayerEat"+firstPlayer.getEAT());
+        System.out.println("secondPlayerEat"+secondPlayer.getEAT());
 
         // ターンが終了した場合
         if (turn % 2 != 0) {
@@ -130,6 +141,8 @@ public class GameController {
                     return true;
                 default:
                     // ゲームが続行中
+                    System.out.println("ゲーム進行中");
+
                     break;
             }
         }
@@ -141,10 +154,10 @@ public class GameController {
     }
     /**自分の設定ナンバーを決める*/
     public void setNumber(String player, String number){
-        if(player == player1.getUserName()){
+        if(player.equals(player1.getUserName())){
             this.player1.setMyNumber(number);
             this.player2.setOpponentNumber(number);
-        }else if(player == player2.getUserName()){
+        }else if(player.equals(player2.getUserName())){
             this.player2.setMyNumber(number);
             this.player1.setOpponentNumber(number);
         }else{
@@ -157,7 +170,8 @@ public class GameController {
      * 正常に処理が成功した場合tureを返す
      * 型や返り値、SQL文の仕様が変わる可能性大
      */
-    public boolean handleTimeout(String errorPlayer, String normalPlayer){
+    public boolean handleTimeout(String errorPlayer,String normalPlayer){
+
         DataBaseController dataBaseController = new DataBaseController();
         // 制限時間を超えたユーザの敗北数を1増やす
         String updateLoseQuery = "UPDATE UserList SET loseCount = loseCount + 1 WHERE UserName = '"+errorPlayer+"'";
@@ -178,18 +192,32 @@ public class GameController {
      * 使用するアイテムに応じてアイテムクラスを呼び出すメソッド
      */
     public ItemMessage useItem(ItemMessage message){
-        if(message.itemName == Item1){
+        //デバック
+        System.out.println("ゲームコントローラー.useItem到達");
+
+        if(message.itemName.equals(Item1)){
             return HighAndLow.useItem(message);
-        }else if(message.itemName == Item2){
+        }else if(message.itemName.equals(Item2)){
             return Slash.useItem(message);
-        }else if(message.itemName == Item3){
+        }else if(message.itemName.equals(Item3)){
             return Target.useItem(message);
         }
         return null;
     }
-    public TargetMessage useTarget(TargetMessage message){
-        return Target.useTarget(message);
+    public ResultMessage sendResult(){
+        if(isWinner == 1){
+            ResultMessage resultMessage = new ResultMessage("Result", firstPlayer.getUserName(),player1.getUserName(), player2.getUserName());
+            return resultMessage;
+        }else if(isWinner == 2){
+            ResultMessage resultMessage = new ResultMessage("Result", secondPlayer.getUserName(),player1.getUserName(), player2.getUserName());
+            return resultMessage;
+        }else if(isWinner == 3){
+            ResultMessage resultMessage = new ResultMessage("Result", "draw",player1.getUserName(), player2.getUserName());
+            return resultMessage;
+        }
+        return null;
     }
+
     /**GameControllerにプレイヤーがいるかどうか判断するメソッド*/
     public boolean hasPlayer(Player playerName) {
         return player1.equals(playerName) || player2.equals(playerName);

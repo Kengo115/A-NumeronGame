@@ -2,6 +2,7 @@ package lobbyServer.communication;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.websocket.EndpointConfig;
 import javax.websocket.OnClose;
@@ -13,8 +14,9 @@ import javax.websocket.server.ServerEndpoint;
 
 import com.google.gson.Gson;
 
-import Message.Certification;
-import Message.Message;
+import Message.*;
+
+import lobbyServer.controller.BattleRecordController;
 import lobbyServer.controller.LoginController;
 import lobbyServer.controller.RegistrationController;
 import lobbyServer.controller.UserController;
@@ -25,9 +27,11 @@ public class WebSocketEndpoint {
 	private static ArrayList<ConnectedUser> connectedUserList = new ArrayList<>();
 	static Gson gson = new Gson();//Gson
 	LobbyServerCommunication serverCommunication;//サーバコミュニケーション
-	LoginController loginController = new LoginController();
-	RegistrationController registrationController = new RegistrationController();
-	static UserController userController = new UserController();
+	LoginController loginController = new LoginController(); //ログインコントローラ
+	RegistrationController registrationController = new RegistrationController(); //会員登録コントローラ
+	static UserController userController = new UserController(); //ユーザコントローラ
+
+	BattleRecordController battleRecordController = new BattleRecordController(); //戦績コントローラ
 
 	@OnOpen //開通時のメッセージ
 	public void onOpen(Session session, EndpointConfig ec) {
@@ -102,6 +106,18 @@ public class WebSocketEndpoint {
 				break;
 			case "MatchingCancel"://マッチングキャンセル
 				userController.deleteUser(receivedMessage.username);
+				break;
+			case "Record":
+				// Recordの場合の処理
+				List<Integer> result = battleRecordController.getBattleRecord(receivedMessage.username);
+				RecordMessage recordMessage = new RecordMessage("Record", receivedMessage.username);
+				recordMessage.rate = result.get(0);
+				recordMessage.winCount = result.get(1);
+				recordMessage.loseCount = result.get(2);
+				recordMessage.drawCount = result.get(3);
+				//メッセージ変換
+				String recordMessageJson = gson.toJson(recordMessage);
+				sendMessage(session, recordMessageJson);
 				break;
 			default:
 				System.out.println("無効な要求です");

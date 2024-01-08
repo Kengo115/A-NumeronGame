@@ -161,33 +161,7 @@ public class DataBaseController {
             return false;
         }
     }
-    
-    public void insertInitialValues(String userName, int initialRate, int initialWinCount, int initialLoseCount, int initialDrawCount) {
-        String insertQuery = "INSERT INTO UserList (UserName, rate, winCount, loseCount, drawCount) VALUES (?, ?, ?, ?, ?)";
 
-    	try {
-        	String target = url + ":" + sqlServerPort + "/" + sqlDatabaseName;
-			System.out.println("target: " + target);
-			
-        	Connection connection = DriverManager.getConnection(target, sqlUserId, sqlPassword);
-            PreparedStatement preparedStatement = connection.prepareStatement(insertQuery);
-            
-            preparedStatement.setString(1, userName);
-            preparedStatement.setInt(2, initialRate);
-            preparedStatement.setInt(3, initialWinCount);
-            preparedStatement.setInt(4, initialLoseCount);
-            preparedStatement.setInt(5, initialDrawCount);
-
-            preparedStatement.executeUpdate();
-            
-            //終了処理
-            preparedStatement.close();
-            connection.close();
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
     
     public List<Integer> executeQueryForGetResultInformation(String sql) {
         List<Integer> resultInformation = new ArrayList<>();
@@ -198,7 +172,6 @@ public class DataBaseController {
 			
         	Connection connection = DriverManager.getConnection(target, sqlUserId, sqlPassword);
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
-        	preparedStatement.setString(1, sql);
 
                 try (ResultSet resultSet = preparedStatement.executeQuery()) {
                     if (resultSet.next()) {

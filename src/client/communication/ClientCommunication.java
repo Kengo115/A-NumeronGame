@@ -23,9 +23,12 @@ public class ClientCommunication {
     	WebSocketEndpoint webSocketEndpoint = new WebSocketEndpoint();
     	webSocketEndpoint.synchroClientCommunication(this);
     }
-    
-    
-    public void LServerConnect() { //ロビーサーバへ接続する
+
+	public static String getUsername() {
+		return username;
+	}
+
+	public void LServerConnect() { //ロビーサーバへ接続する
     	LSwsManager = new WebSocketManager(LSserverEndpoint);
     	LSwsManager.connect();
     }
@@ -116,6 +119,48 @@ public class ClientCommunication {
 		}
 	}
 
+	public void checkNumber(String number) {//設定ナンバーを送る
+
+		System.out.println("ClientCommunication.checkNumber到達");
+		if(APwsManager.isConnected()) {
+			SetNumberMessage sendMessage = new SetNumberMessage("SetNumber",username,number);
+			String sendMessageJson = gson.toJson(sendMessage);
+			APwsManager.sendMessage(sendMessageJson);
+		}
+	}
+
+	public void selectItem(String item,int number){//アイテム使用を送る
+
+		String result="NULL";//空文字を初期値として送る
+		System.out.println("ClientCommunication.selectItem到達");
+		if(APwsManager.isConnected()){
+			//分岐処理
+			if(item.equals("Target")) {
+				ItemMessage itemMessage = new ItemMessage("Item",username,item,result,number);
+				String sendMessageJson = gson.toJson(itemMessage);
+				APwsManager.sendMessage(sendMessageJson);
+			}
+			else {
+				ItemMessage sendMessage = new ItemMessage("Item",username,item,result);
+				String sendMessageJson = gson.toJson(sendMessage);
+				APwsManager.sendMessage(sendMessageJson);
+			}
+		}
+	}
+
+	public void callCheck(String number){//コールした番号とEAT,BITEの判別要求を送る
+
+		int EAT=0;
+		int BITE=0;//0を初期値として送る
+		System.out.println("ClientCommunication.callCheck到達");
+		if (APwsManager.isConnected()) {
+			CallMessage sendMessage = new CallMessage("Call",username,number,EAT,BITE);
+			String sendMessageJson = gson.toJson(sendMessage);
+			APwsManager.sendMessage(sendMessageJson);
+		}
+
+	}
+
 	public void LSDisconnect() { //ロビーサーバとの通信を切断する・
     	try {
 			LSwsManager.disconnect();
@@ -125,7 +170,7 @@ public class ClientCommunication {
 		}
     }
 
-	public void APDisconnect() { //ロビーサーバとの通信を切断する・
+	public void APDisconnect() { //アプリケーションサーバとの通信を切断する・
 		try {
 			APwsManager.disconnect();
 		} catch (IOException e) {

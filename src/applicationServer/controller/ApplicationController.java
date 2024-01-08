@@ -1,15 +1,19 @@
 
 package applicationServer.controller;
 
+import applicationServer.Communication.ApplicationServerCommunication;
 import applicationServer.entity.Player;
 import Message.*;
+import databaseServer.controller.DataBaseController;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 
 public class ApplicationController {
     /**GameControllerクラスを複数持つリスト**/
-
     static ArrayList<GameController> gameControllers = new ArrayList<>();
+    ApplicationServerCommunication applicationServerCommunication;
+    DataBaseController dataBaseController = new DataBaseController();
     Player player1 = new Player();/**Player型のプレイヤー1人目*/
     Player player2 = new Player();/**Player型のプレイヤー2人目*/
 
@@ -34,7 +38,7 @@ public class ApplicationController {
             }
         }
     }
-    public GameController searchRoom(String userName) {
+    public static GameController searchRoom(String userName) {
         Iterator<GameController> iterator = gameControllers.iterator();
         while (iterator.hasNext()) {
             GameController controller = iterator.next();
@@ -45,9 +49,40 @@ public class ApplicationController {
         return null;
     }
 
-    public CallMessage determineEATAndBITE(CallMessage message){
+    public CallMessage determineEATAndBITE(CallMessage message) {
         GameController gameController = searchRoom(message.username);
-        return gameController.determineEATAndBITE(message); //CallMessageクラスが返ってくる
+        CallMessage callMessage = gameController.determineEATAndBITE(message);
+        if (isFinish(message.username)) { //ゲームが終了した際 -> result
+            //デバック
+            System.out.println("ゲーム終了");
+
+
+            ApplicationServerCommunication.sendResult(sendResult(message.username));
+            if (gameController.getIsWinner() != 3) {
+
+                String insertQuery1 = "UPDATE UserList SET rate = rate+100 WHERE UserName = '" + message.username + "'AND winCount = winCount+1";
+                String insertQuery2 = "UPDATE UserList SET rate = rate-100 WHERE UserName = '" + getOpponentUsername(message.username) + "' And loseCount = loseCount+1";
+                dataBaseController.executeQueryForGetResultInformation(insertQuery1);
+                dataBaseController.executeQueryForGetResultInformation(insertQuery2);
+            } else if (gameController.getIsWinner() == 3) {
+                String insertQuery1 = "UPDATE UserList SET drawCount = drawCount+1 WHERE UserName = '" + message.username + "'";
+                String insertQuery2 = "UPDATE UserList SET drawCount = drawCount+1 WHERE UserName = '" + getOpponentUsername(message.username) + "'";
+                dataBaseController.executeQueryForGetResultInformation(insertQuery1);
+                dataBaseController.executeQueryForGetResultInformation(insertQuery2);
+
+            }
+            return null;
+        } else {
+            //デバック
+            System.out.println("ゲーム終了しない");
+
+            return callMessage; //CallMessageクラスが返ってくる
+        }
+    }
+
+    public ResultMessage sendResult(String userName){
+        GameController gameController = searchRoom(userName);
+        return gameController.sendResult();
     }
 
     public boolean isFinish(String userName){
@@ -74,13 +109,9 @@ public class ApplicationController {
         GameController gameController = searchRoom(message.username);
         return gameController.useItem(message);
     }
-    public TargetMessage useTarget(TargetMessage message){
-        GameController gameController = searchRoom(message.username);
-        return gameController.useTarget(message);
-    }
 
     //ユーザ名からプレイヤークラスを返すメソッド
-    public Player getPlayer(String username){
+    public static Player getPlayer(String username){
 
         //デバック
         System.out.println("getPlayer到達");
@@ -93,9 +124,13 @@ public class ApplicationController {
         System.out.println(gameController.player2.getUserName());
 
         if(gameController.player1.getUserName().equals(username)){
-            return player1;
+            //デバック
+            System.out.println("プレイヤー1取得");
+            return gameController.player1;
         }else if(gameController.player2.getUserName().equals(username)){
-            return player2;
+            //デバック
+            System.out.println("プレイヤー2取得");
+            return gameController.player2;
         }
         return null;
     }
@@ -103,9 +138,9 @@ public class ApplicationController {
     public String getOpponentUsername(String username){
         GameController gameController = searchRoom(username);
         if(gameController.player1.getUserName().equals(username)){
-            return player2.getUserName();
+            return gameController.player2.getUserName();
         }else if(gameController.player2.getUserName().equals(username)){
-            return player1.getUserName();
+            return gameController.player1.getUserName();
         }
         return null;
     }
