@@ -13,7 +13,7 @@ public class ApplicationController {
     /**GameControllerクラスを複数持つリスト**/
     static ArrayList<GameController> gameControllers = new ArrayList<>();
     ApplicationServerCommunication applicationServerCommunication;
-    DataBaseController dataBaseController = new DataBaseController();
+
     Player player1 = new Player();/**Player型のプレイヤー1人目*/
     Player player2 = new Player();/**Player型のプレイヤー2人目*/
 
@@ -55,22 +55,7 @@ public class ApplicationController {
         if (isFinish(message.username)) { //ゲームが終了した際 -> result
             //デバック
             System.out.println("ゲーム終了");
-
-
             ApplicationServerCommunication.sendResult(sendResult(message.username));
-            if (gameController.getIsWinner() != 3) {
-
-                String insertQuery1 = "UPDATE UserList SET rate = rate+100 WHERE UserName = '" + message.username + "'AND winCount = winCount+1";
-                String insertQuery2 = "UPDATE UserList SET rate = rate-100 WHERE UserName = '" + getOpponentUsername(message.username) + "' And loseCount = loseCount+1";
-                dataBaseController.executeQueryForGetResultInformation(insertQuery1);
-                dataBaseController.executeQueryForGetResultInformation(insertQuery2);
-            } else if (gameController.getIsWinner() == 3) {
-                String insertQuery1 = "UPDATE UserList SET drawCount = drawCount+1 WHERE UserName = '" + message.username + "'";
-                String insertQuery2 = "UPDATE UserList SET drawCount = drawCount+1 WHERE UserName = '" + getOpponentUsername(message.username) + "'";
-                dataBaseController.executeQueryForGetResultInformation(insertQuery1);
-                dataBaseController.executeQueryForGetResultInformation(insertQuery2);
-
-            }
             return null;
         } else {
             //デバック
@@ -101,7 +86,7 @@ public class ApplicationController {
     }
 
     public void handleTimeout(ErrorGameEndMessage message){
-        GameController gameController = searchRoom(message.username);
+        GameController gameController = searchRoom(message.errorUser);
         gameController.handleTimeout(message.errorUser, message.normalUser);
     }
 

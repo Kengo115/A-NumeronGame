@@ -4,8 +4,8 @@ import Message.ItemMessage;
 import applicationServer.controller.ApplicationController;
 
 public class Slash extends Item {
-    String result;
-    Player player;
+    String result = "";
+    Player player = null;
     @Override
     public ItemMessage useItem(ItemMessage message){
         player = ApplicationController.getPlayer(message.username);

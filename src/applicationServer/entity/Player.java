@@ -1,13 +1,13 @@
 package applicationServer.entity;
 
 public class Player {
-    String userName;
+    String userName = null;
     boolean isItem;
-    String myNumber;
-    String opponentNumber;
-    int turnOrder; //0(先攻), 1(後攻)
-    int EAT; /**直前のEAT数を保存する*/
-    int BITE;
+    String myNumber = null;
+    String opponentNumber = null;
+    int turnOrder = 0; //0(先攻), 1(後攻)
+    int EAT = 0; /**直前のEAT数を保存する*/
+    int BITE = 0;
 
     boolean isWin = false;
 

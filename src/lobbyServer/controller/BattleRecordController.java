@@ -9,7 +9,7 @@ public class BattleRecordController {
 	public List<Integer> getBattleRecord(String userName) {
         DataBaseController dataBaseController = new DataBaseController();
         
-        String getResultInformationQuery = "SELECT rate, winCount, loseCount, drawCount FROM UserList WHERE UserName = "+userName;
+        String getResultInformationQuery = "SELECT rate, winCount, loseCount, drawCount FROM UserList WHERE UserName = "+"'"+userName+"'";
         
 		return dataBaseController.executeQueryForGetResultInformation(getResultInformationQuery);
 

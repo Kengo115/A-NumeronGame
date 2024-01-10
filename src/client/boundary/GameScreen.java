@@ -18,9 +18,10 @@ public class GameScreen extends JPanel implements ActionListener {
     //Slash使用 6
     //Target使用 7
     /** ターンの管理 */
-    private boolean myTurn;
-    /** 先攻後攻の管理 */
-    private boolean order = true;   // 先攻をtrueとする
+    private boolean myTurn = true;
+    /** ターン数の管理 */
+    private int myTotalTurn = 1;
+    private int opponentTotalTurn = 1;
     /** 設定ナンバー */
     private String setNumber;
     /** CALLナンバー */
@@ -66,8 +67,6 @@ public class GameScreen extends JPanel implements ActionListener {
     JButton clearButton = new JButton("クリア");
     /** 設定ボタン */
     JButton setCallButton = new JButton("設定");
-    /** CALLボタン */
-    //JButton callButton = new JButton("CALL");
     /** CALLナンバーラベル */
     JLabel callNumberLabel = new JLabel("CALLナンバー");    // CALLナンバーの水色背景
     /** 設定ナンバー */
@@ -85,23 +84,27 @@ public class GameScreen extends JPanel implements ActionListener {
     JButton changeOpponentTurnButton = new JButton("戻る");
     /** 表のコラム */
     private String[] columnNames = {"TURN", "NUMBER", "EAT", "BITE"};
-    /** 表のデータ */
+    /** 自分の表 */
     private String[][] myTableData = {
-            {"列1のデータ", "列2のデータ", "列3のデータ"},   /* 1行目 */
-            {"列1のデータ", "列2のデータ", "列3のデータ"},   /* 2行目 */
-            {"列1のデータ", "列2のデータ", "列3のデータ"},   /* 3行目 */
-            {"列1のデータ", "列2のデータ", "列3のデータ"}    /* 4行目 */
+            {"TURN", "NUMBER", "EAT", "BITE"}   /* 1行目 */
     };
-
+    /** 表に追加するデータ */
+    private String[] addData;
+    /** 自分のテーブルモデル */
     DefaultTableModel myTableModel = new DefaultTableModel(myTableData,columnNames);
     /** 自分のCALL履歴表 */
     JTable myCallTable = new JTable(myTableModel);
-
-    //JScrollPane myScrollPane = new JScrollPane(myCallTable);
-
-
-
-
+    /** 相手の表 */
+    private String[][] opponentTableData = {
+            {"TURN", "NUMBER", "EAT", "BITE"}
+    };
+    /** 相手のテーブルモデル */
+    DefaultTableModel opponentTableModel = new DefaultTableModel(opponentTableData,columnNames);
+    /** 相手のCALL履歴表 */
+    JTable opponentCallTable = new JTable(opponentTableModel);
+    /** アイテム結果表示ラベル */
+    JLabel myItemResult = new JLabel("アイテム未使用");
+    JLabel opponentItemResult = new JLabel("アイテム未使用");
 
     public GameScreen(Controller controller){
         super();
@@ -111,7 +114,6 @@ public class GameScreen extends JPanel implements ActionListener {
             this.setLayout(null);
 
             // フォント設定（サイズごと）
-            Font font30 = new Font("SansSerif", Font.BOLD, 30);
             Font font20 = new Font("SansSerif", Font.BOLD, 20);
             Font font16 = new Font("SansSerif", Font.BOLD, 16);
             Font font10 = new Font("SansSerif", Font.BOLD, 10);
@@ -139,9 +141,10 @@ public class GameScreen extends JPanel implements ActionListener {
             popUpLabel.setBackground(Color.WHITE);
             popUpLabel.setBorder(border1);
 
-            subPopUpLabel.setFont(font16);
-            subPopUpLabel.setBounds(350,200,200,100);
+            subPopUpLabel.setFont(font20);
+            subPopUpLabel.setBounds(0,230,1000,100);
             subPopUpLabel.setHorizontalAlignment(JLabel.CENTER);
+            subPopUpLabel.setForeground(new Color(220, 31, 75));
 
             /** 設定ナンバー入力 */
             progressionLabel.setFont(font16);
@@ -205,12 +208,6 @@ public class GameScreen extends JPanel implements ActionListener {
             setCallButton.setFont(font20);
             setCallButton.setBackground(new Color(250, 244, 88));
             setCallButton.setBounds(475,450,110,50);
-
-            /*
-            callButton.addActionListener(this);
-            callButton.setFont(font20);
-            callButton.setBackground(new Color(250, 244, 88));
-            callButton.setBounds(475,450,110,50);*/
 
             clearButton.addActionListener(this);
             clearButton.setFont(font10);
@@ -284,10 +281,32 @@ public class GameScreen extends JPanel implements ActionListener {
             itemBackgroundLabel.setBorder(border1);
 
             // テーブルのレイアウト
-            myCallTable.setOpaque(true);
-            myCallTable.setBackground(Color.BLACK);
+            myCallTable.setOpaque(false);
+            myCallTable.setBackground(Color.WHITE);
             myCallTable.setFont(font16);
-            myCallTable.setBounds(50,60,200,200);
+            myCallTable.setBorder(border1);
+            myCallTable.setBounds(50,210,300,300);
+
+            opponentCallTable.setOpaque(false);
+            opponentCallTable.setBackground(Color.WHITE);
+            opponentCallTable.setFont(font16);
+            opponentCallTable.setBorder(border1);
+            opponentCallTable.setBounds(650,210,300,300);
+
+            // アイテム結果表示ラベル
+            myItemResult.setFont(font16);
+            myItemResult.setBounds(50,175,300,25);
+            myItemResult.setHorizontalAlignment(JLabel.CENTER);
+            myItemResult.setOpaque(true);
+            myItemResult.setBackground(Color.WHITE);
+            myItemResult.setBorder(border1);
+
+            opponentItemResult.setFont(font16);
+            opponentItemResult.setBounds(650,175,300,25);
+            opponentItemResult.setHorizontalAlignment(JLabel.CENTER);
+            opponentItemResult.setOpaque(true);
+            opponentItemResult.setBackground(Color.WHITE);
+            opponentItemResult.setBorder(border1);
 
             /** アイテム使用 */
             yesButton.addActionListener(this);
@@ -308,11 +327,6 @@ public class GameScreen extends JPanel implements ActionListener {
 
             changeStatus(status);
 
-            /** 画面サイズが変更されたときに呼ばれるイベントリスナー
-             * ここ書く予定
-             */
-
-
         }catch (Exception ex){
             ex.printStackTrace();
             JOptionPane.showMessageDialog(this,"ERROR : " + ex.toString());
@@ -329,11 +343,7 @@ public class GameScreen extends JPanel implements ActionListener {
         else if(ae.getSource() == setCallButton){
             pushSetCallButton();
             System.out.println("設定/CALLボタンが押されました");
-        }/*
-        else if(ae.getSource() == callButton){
-            pushCallButton();
-            System.out.println("CALLボタンが押されました");
-        }*/
+        }
         else if(ae.getSource() == highAndLowButton){
             pushHighAndLowButton();
             System.out.println("HIGH & LOWボタンが押されました");
@@ -723,7 +733,7 @@ public class GameScreen extends JPanel implements ActionListener {
         //ステータスの数値を合わせる
         this.status = status;
 
-        //とりあえずすべてのボタンをいったんremoveする
+        //とりあえずすべてのコンポーネントをいったんremoveする
         this.remove(checkButton);
         this.remove(popUpLabel);
         this.remove(subPopUpLabel);
@@ -753,7 +763,10 @@ public class GameScreen extends JPanel implements ActionListener {
         this.remove(yesButton);
         this.remove(backButton);
         this.remove(changeOpponentTurnButton);
-
+        this.remove(myCallTable);
+        this.remove(opponentCallTable);
+        this.remove(myItemResult);
+        this.remove(opponentItemResult);
 
         switch (status){
 
@@ -766,6 +779,7 @@ public class GameScreen extends JPanel implements ActionListener {
             /** 設定ナンバー入力画面 */
             case 2:
                 setCallButton.setText("設定");
+                progressionLabel.setText("設定ナンバーを入力してください");
                 this.add(button0);
                 this.add(button1);
                 this.add(button2);
@@ -808,6 +822,7 @@ public class GameScreen extends JPanel implements ActionListener {
                     button7.setEnabled(true);
                     button8.setEnabled(true);
                     button9.setEnabled(true);
+                    clearButton.setEnabled(true);
                     highAndLowButton.setEnabled(true);
                     slashButton.setEnabled(true);
                     targetButton.setEnabled(true);
@@ -838,9 +853,10 @@ public class GameScreen extends JPanel implements ActionListener {
                     this.add(backGroundLabel1);
                     this.add(backGroundLabel2);
                     this.add(itemBackgroundLabel);
-                    //this.add(myCallTable);
-                    //this.add(myScrollPane);
-                    //this.add(new JScrollPane(myCallTable), BorderLayout.CENTER);
+                    this.add(myCallTable);
+                    this.add(opponentCallTable);
+                    this.add(myItemResult);
+                    this.add(opponentItemResult);
                 }
                 else{
                     // アイテムを使用した後の自分のターン画面
@@ -855,6 +871,7 @@ public class GameScreen extends JPanel implements ActionListener {
                     button7.setEnabled(true);
                     button8.setEnabled(true);
                     button9.setEnabled(true);
+                    clearButton.setEnabled(true);
                     setCallButton.setEnabled(false);
                     highAndLowButton.setEnabled(false);
                     slashButton.setEnabled(false);
@@ -883,6 +900,10 @@ public class GameScreen extends JPanel implements ActionListener {
                     this.add(backGroundLabel1);
                     this.add(backGroundLabel2);
                     this.add(itemBackgroundLabel);
+                    this.add(myCallTable);
+                    this.add(opponentCallTable);
+                    this.add(myItemResult);
+                    this.add(opponentItemResult);
                 }
 
                 repaint();
@@ -900,13 +921,12 @@ public class GameScreen extends JPanel implements ActionListener {
                 button7.setEnabled(false);
                 button8.setEnabled(false);
                 button9.setEnabled(false);
+                clearButton.setEnabled(false);
                 setCallButton.setEnabled(false);
                 highAndLowButton.setEnabled(false);
                 slashButton.setEnabled(false);
                 targetButton.setEnabled(false);
                 popUpLabel.setText("HIGH & LOWを使用しますか？");
-                subPopUpLabel.setText("※アイテムの使用は一度きりです");
-                subPopUpLabel.setForeground(Color.RED);
                 this.add(yesButton);
                 this.add(backButton);
                 this.add(popUpLabel);
@@ -933,15 +953,16 @@ public class GameScreen extends JPanel implements ActionListener {
                 this.add(backGroundLabel1);
                 this.add(backGroundLabel2);
                 this.add(itemBackgroundLabel);
+                this.add(myCallTable);
+                this.add(opponentCallTable);
+                this.add(myItemResult);
+                this.add(opponentItemResult);
                 repaint();
                 break;
             /** SLASH使用画面 */
             case 6:
                 setCallButton.setText("CALL");
                 popUpLabel.setText("SLASHを使用しますか？");
-                this.add(popUpLabel);
-                this.add(yesButton);
-                this.add(backButton);
                 button0.setEnabled(false);
                 button1.setEnabled(false);
                 button2.setEnabled(false);
@@ -952,6 +973,7 @@ public class GameScreen extends JPanel implements ActionListener {
                 button7.setEnabled(false);
                 button8.setEnabled(false);
                 button9.setEnabled(false);
+                clearButton.setEnabled(false);
                 setCallButton.setEnabled(false);
                 highAndLowButton.setEnabled(false);
                 slashButton.setEnabled(false);
@@ -982,22 +1004,24 @@ public class GameScreen extends JPanel implements ActionListener {
                 this.add(backGroundLabel1);
                 this.add(backGroundLabel2);
                 this.add(itemBackgroundLabel);
+                this.add(myCallTable);
+                this.add(opponentCallTable);
+                this.add(myItemResult);
+                this.add(opponentItemResult);
                 repaint();
                 break;
             /** TARGET使用画面 */
             case 7:
                 setCallButton.setText("CALL");
                 popUpLabel.setText("TARGETするナンバーを選択してください");
-                this.add(popUpLabel);
-                this.add(backButton);
                 setCallButton.setEnabled(false);
                 highAndLowButton.setEnabled(false);
                 slashButton.setEnabled(false);
                 targetButton.setEnabled(false);
+                clearButton.setEnabled(false);
                 inputNumberField.setText("");
-                this.add(popUpLabel);
-                this.add(yesButton);
                 this.add(backButton);
+                this.add(popUpLabel);
                 this.add(progressionLabel);
                 this.add(callNumberLabel);
                 this.add(highAndLowButton);
@@ -1021,6 +1045,10 @@ public class GameScreen extends JPanel implements ActionListener {
                 this.add(backGroundLabel1);
                 this.add(backGroundLabel2);
                 this.add(itemBackgroundLabel);
+                this.add(myCallTable);
+                this.add(opponentCallTable);
+                this.add(myItemResult);
+                this.add(opponentItemResult);
                 repaint();
                 break;
 
@@ -1041,8 +1069,10 @@ public class GameScreen extends JPanel implements ActionListener {
                 highAndLowButton.setEnabled(false);
                 slashButton.setEnabled(false);
                 targetButton.setEnabled(false);
+                clearButton.setEnabled(false);
                 checkButton.setText("確認");
                 this.add(checkButton);
+                this.add(subPopUpLabel);
                 this.add(popUpLabel);
                 this.add(progressionLabel);
                 this.add(callNumberLabel);
@@ -1067,6 +1097,10 @@ public class GameScreen extends JPanel implements ActionListener {
                 this.add(backGroundLabel1);
                 this.add(backGroundLabel2);
                 this.add(itemBackgroundLabel);
+                this.add(myCallTable);
+                this.add(opponentCallTable);
+                this.add(myItemResult);
+                this.add(opponentItemResult);
                 repaint();
                 break;
             /** CALL結果表示画面 */
@@ -1087,6 +1121,7 @@ public class GameScreen extends JPanel implements ActionListener {
                 highAndLowButton.setEnabled(false);
                 slashButton.setEnabled(false);
                 targetButton.setEnabled(false);
+                clearButton.setEnabled(false);
                 this.add(changeOpponentTurnButton);
                 this.add(subPopUpLabel);
                 this.add(popUpLabel);
@@ -1113,6 +1148,10 @@ public class GameScreen extends JPanel implements ActionListener {
                 this.add(backGroundLabel1);
                 this.add(backGroundLabel2);
                 this.add(itemBackgroundLabel);
+                this.add(myCallTable);
+                this.add(opponentCallTable);
+                this.add(myItemResult);
+                this.add(opponentItemResult);
                 repaint();
                 break;
             /** 通信切断画面 */
@@ -1129,6 +1168,7 @@ public class GameScreen extends JPanel implements ActionListener {
                 button7.setEnabled(false);
                 button8.setEnabled(false);
                 button9.setEnabled(false);
+                clearButton.setEnabled(false);
                 setCallButton.setEnabled(false);
                 highAndLowButton.setEnabled(false);
                 slashButton.setEnabled(false);
@@ -1158,6 +1198,10 @@ public class GameScreen extends JPanel implements ActionListener {
                 this.add(backGroundLabel1);
                 this.add(backGroundLabel2);
                 this.add(itemBackgroundLabel);
+                this.add(myCallTable);
+                this.add(opponentCallTable);
+                this.add(myItemResult);
+                this.add(opponentItemResult);
                 repaint();
                 break;
             /** 相手のターン画面 */
@@ -1165,6 +1209,7 @@ public class GameScreen extends JPanel implements ActionListener {
                 setCallButton.setText("CALL");
                 inputNumberField.setText("");
                 progressionLabel.setText("相手のターンです");
+                setNumberLabel.setText(this.setNumber);
                 button0.setEnabled(false);
                 button1.setEnabled(false);
                 button2.setEnabled(false);
@@ -1175,6 +1220,7 @@ public class GameScreen extends JPanel implements ActionListener {
                 button7.setEnabled(false);
                 button8.setEnabled(false);
                 button9.setEnabled(false);
+                clearButton.setEnabled(false);
                 setCallButton.setEnabled(false);
                 clearButton.setEnabled(false);
                 this.add(progressionLabel);
@@ -1196,6 +1242,10 @@ public class GameScreen extends JPanel implements ActionListener {
                 this.add(inputNumberField);
                 this.add(backGroundLabel1);
                 this.add(backGroundLabel2);
+                this.add(myCallTable);
+                this.add(opponentCallTable);
+                this.add(myItemResult);
+                this.add(opponentItemResult);
                 repaint();
                 break;
             /** アイテム使用画面から戻るボタンが押されて自分のターン画面に戻る */
@@ -1211,18 +1261,11 @@ public class GameScreen extends JPanel implements ActionListener {
                 button7.setEnabled(true);
                 button8.setEnabled(true);
                 button9.setEnabled(true);
+                clearButton.setEnabled(true);
                 setCallButton.setEnabled(false);
-                // アイテム未使用ならボタン使用可にする
-                if(item){
-                    highAndLowButton.setEnabled(true);
-                    slashButton.setEnabled(true);
-                    targetButton.setEnabled(true);
-                }
-                else {
-                    highAndLowButton.setEnabled(false);
-                    slashButton.setEnabled(false);
-                    targetButton.setEnabled(false);
-                }
+                highAndLowButton.setEnabled(true);
+                slashButton.setEnabled(true);
+                targetButton.setEnabled(true);
                 inputNumberField.setText("");
                 this.add(progressionLabel);
                 this.add(callNumberLabel);
@@ -1247,6 +1290,59 @@ public class GameScreen extends JPanel implements ActionListener {
                 this.add(backGroundLabel1);
                 this.add(backGroundLabel2);
                 this.add(itemBackgroundLabel);
+                this.add(myCallTable);
+                this.add(opponentCallTable);
+                this.add(myItemResult);
+                this.add(opponentItemResult);
+                repaint();
+                break;
+            case 13:
+                setCallButton.setText("CALL");
+                popUpLabel.setText("制限時間を経過しました．");
+                button0.setEnabled(false);
+                button1.setEnabled(false);
+                button2.setEnabled(false);
+                button3.setEnabled(false);
+                button4.setEnabled(false);
+                button5.setEnabled(false);
+                button6.setEnabled(false);
+                button7.setEnabled(false);
+                button8.setEnabled(false);
+                button9.setEnabled(false);
+                clearButton.setEnabled(false);
+                setCallButton.setEnabled(false);
+                highAndLowButton.setEnabled(false);
+                slashButton.setEnabled(false);
+                targetButton.setEnabled(false);
+                this.add(backButton);
+                this.add(popUpLabel);
+                this.add(progressionLabel);
+                this.add(callNumberLabel);
+                this.add(highAndLowButton);
+                this.add(slashButton);
+                this.add(targetButton);
+                this.add(setCallButton);
+                this.add(clearButton);
+                this.add(setNumberLabel);
+                this.add(setNumberTopLabel);
+                this.add(button0);
+                this.add(button1);
+                this.add(button2);
+                this.add(button3);
+                this.add(button4);
+                this.add(button5);
+                this.add(button6);
+                this.add(button7);
+                this.add(button8);
+                this.add(button9);
+                this.add(inputNumberField);
+                this.add(backGroundLabel1);
+                this.add(backGroundLabel2);
+                this.add(itemBackgroundLabel);
+                this.add(myCallTable);
+                this.add(opponentCallTable);
+                this.add(myItemResult);
+                this.add(opponentItemResult);
                 repaint();
                 break;
         }
@@ -1257,9 +1353,45 @@ public class GameScreen extends JPanel implements ActionListener {
         changeStatus(10);
     }
 
-    // 制限時間経過で呼び出されるメソッド
+    // 自分の制限時間経過で呼び出されるメソッド
     public void timeOut(){
+        changeStatus(13);
+    }
 
+    public void initialization(){
+        myTurn = true;
+        button0.setEnabled(true);
+        button1.setEnabled(true);
+        button2.setEnabled(true);
+        button3.setEnabled(true);
+        button4.setEnabled(true);
+        button5.setEnabled(true);
+        button6.setEnabled(true);
+        button7.setEnabled(true);
+        button8.setEnabled(true);
+        button9.setEnabled(true);
+        clearButton.setEnabled(true);
+        highAndLowButton.setEnabled(true);
+        slashButton.setEnabled(true);
+        targetButton.setEnabled(true);
+        myTotalTurn = 1;
+        opponentTotalTurn = 1;
+        status = 1;
+        inputNumberField.setText("");
+        item = true;
+        progressionLabel.setText("設定ナンバーを入力してください");
+        setNumberLabel.setText("");
+        setCallButton.setText("設定");
+        for (int i = myTableModel.getRowCount()-1; i > 0; ){
+            myTableModel.removeRow(i);
+            i = myTableModel.getRowCount()-1;
+        }
+        for(int i = opponentTableModel.getRowCount()-1; i > 0; ){
+            opponentTableModel.removeRow(i);
+            i = opponentTableModel.getRowCount()-1;
+        }
+        myItemResult.setText("アイテム未使用");
+        opponentItemResult.setText("アイテム未使用");
     }
 
     // 先攻プレイヤーのみ呼び出されるメソッド
@@ -1271,13 +1403,13 @@ public class GameScreen extends JPanel implements ActionListener {
     // 後攻プレイヤーのみ呼び出されるメソッド
     public void attackLast(){
         popUpLabel.setText("対戦開始！あなたは後攻です");
-        order = false;
+        myTurn = false;
         changeStatus(1);
     }
 
     // 相手の設定ナンバーが入力されたことを確認して画面を遷移するメソッド
     public void opponentSetComplete(){
-        if(order){ //先攻の場合は自ターン開始
+        if(myTurn){ //先攻の場合は自ターン開始
             changeStatus(4);
             myTurn = true;
         }
@@ -1309,40 +1441,53 @@ public class GameScreen extends JPanel implements ActionListener {
             System.out.println("不正な遷移です");
             return;
         }
+
         if(mine) {
             popUpLabel.setText(itemName + "結果:使用者 自分");
             this.item = false;
+            myItemResult.setText(result);
         }
         else {
             popUpLabel.setText(itemName + "結果:使用者 相手");
+            opponentItemResult.setText(result);
         }
         subPopUpLabel.setText(result);
         changeStatus(8);
     }
 
-    public void displayCallResult(String callNumber, String eat, String bite,boolean mine){
+    public void displayCallResult(String callNumber, String eat, String bite, boolean mine){
         if(mine) {
             popUpLabel.setText("CALL結果:自分のターン");
+            this.addData = new String[]{Integer.toString(this.myTotalTurn), callNumber, eat, bite};
+            myTableModel.addRow(addData);
+            myTotalTurn++;
         }
         else {
             popUpLabel.setText("CALL結果:相手のターン");
+            this.addData = new String[]{Integer.toString(this.opponentTotalTurn), callNumber, eat, bite};
+            opponentTableModel.addRow(addData);
+            opponentTotalTurn++;
         }
         subPopUpLabel.setText(callNumber+" → "+"EAT : " + eat + ", BITE : " + bite);
         changeStatus(9);
     }
 
     public void pushCheckButton(){
-        if(this.status == 5 || this.status == 6 || this.status == 7){
+        if(this.status == 8){
             // アイテム使用後の確認ボタンの場合
             // 自分のターンの場合は自分のターン画面に遷移
-            if(myTurn) changeStatus(4);
-            else changeStatus(11);
+            if(myTurn){
+                changeStatus(4);
+            }
+            else{
+                changeStatus(11);
+            }
         }
         else{
             // 先攻後攻の確認ボタンの場合
             // 先攻の場合は設定ナンバー画面に遷移
-            if(order) changeStatus(2);
-            //後攻の場合は相手の入力待ち
+            if(myTurn) changeStatus(2);
+                //後攻の場合は相手の入力待ち
             else changeStatus(3);
         }
     }
@@ -1352,7 +1497,7 @@ public class GameScreen extends JPanel implements ActionListener {
         if("設定".equals(buttonName)){
             this.setNumber = this.inputNumber;
             controller.set(this.setNumber);
-            if(order){
+            if(myTurn){
                 changeStatus(3);
             }
             else{
@@ -1362,7 +1507,8 @@ public class GameScreen extends JPanel implements ActionListener {
         }
         else if("CALL".equals(buttonName)){
             this.callNumber = this.inputNumber;
-            controller.call(this.callNumber);
+            //this.displayCallResult(this.callNumber,"2","0",true);   // 単体用
+            controller.call(this.callNumber); // 全体用
         }
     }
 
@@ -1378,11 +1524,25 @@ public class GameScreen extends JPanel implements ActionListener {
 
     public void pushTargetButton(){
         this.itemName = "Target";
+        popUpLabel.setBounds(300,40,400,220);
+        backButton.setBounds(350, 190, 100, 60);
         changeStatus(7);
     }
 
     public void pushBackButton(){
-        changeStatus(12);
+        if(this.status == 7){
+            // ポップアップラベルをずらしたのを元に戻す
+            popUpLabel.setBounds(300,150,400,220);
+            backButton.setBounds(350,300,100,60);
+            changeStatus(12);
+        }
+        else if(this.status == 10 || this.status == 13){
+            // 相手の通信が切断された場合
+            controller.screenTransition("lobby");
+        }
+        else{
+            changeStatus(12);
+        }
     }
 
     public void pushChangeOpponentTurnButton(){
@@ -1397,7 +1557,13 @@ public class GameScreen extends JPanel implements ActionListener {
     }
 
     public void pushYesButton(){
-        controller.useItem(this.itemName, Integer.parseInt(this.targetNumber));
+        controller.useItem(this.itemName, Integer.parseInt(this.targetNumber));   // 全体用
+        //this.displayItemResult(this.itemName,"HIGH HIGH LOW",true); // 単体用
+        // ポップアップラベルをずらしたのを元に戻す
+        if(this.status == 7){
+            popUpLabel.setBounds(300,150,400,220);
+            backButton.setBounds(350,300,100,60);
+        }
     }
 
 }

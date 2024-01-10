@@ -6,8 +6,8 @@ import applicationServer.controller.ApplicationController;
 public class HighAndLow extends Item {
     String High = "HIGH";
     String Low = "LOW";
-    String result;
-    Player player;
+    String result = "";
+    Player player = null;
     ApplicationController applicationController;
     @Override
     public ItemMessage useItem(ItemMessage message){

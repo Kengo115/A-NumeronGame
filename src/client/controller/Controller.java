@@ -139,7 +139,7 @@ public class Controller extends JFrame {
     public void displayResult(String username1,String username2,String winUser,int result){
         System.out.println("コントローラ到達:displayResult");
         //ResultScreenにユーザ情報を渡す
-        resultScreen.displayResult(username1,username2,winUser);
+        resultScreen.displayResult(username1,username2,winUser,result);
         screenTransition("result");
     }
 
@@ -167,11 +167,11 @@ public class Controller extends JFrame {
     }
 
     public void set(String setNumber){
-    clientCommunication.checkNumber(setNumber);
+        clientCommunication.checkNumber(setNumber);
     }
 
     public void call(String callNumber){
-    clientCommunication.callCheck(callNumber);
+        clientCommunication.callCheck(callNumber);
     }
 
 
@@ -195,7 +195,7 @@ public class Controller extends JFrame {
 
 
     public void displayCallResult(String callNumber,int eat, int bite,boolean mine){
-       gameScreen.displayCallResult(callNumber, Integer.toString(eat), Integer.toString(bite),mine);
+        gameScreen.displayCallResult(callNumber, Integer.toString(eat), Integer.toString(bite),mine);
     }
 
     public void displayItemResult(String item, String result,boolean mine){
@@ -204,6 +204,7 @@ public class Controller extends JFrame {
 
     // 先攻後攻を取得するメソッドを追加
     public void getOrder(boolean attackFirst){
+        gameScreen.initialization();
         if(attackFirst){
             // 先攻
             gameScreen.attackFirst();

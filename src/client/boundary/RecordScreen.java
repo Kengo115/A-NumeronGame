@@ -17,7 +17,10 @@ public class RecordScreen extends JPanel implements ActionListener {
     public int loseCount;
     public int drawCount;
     //勝敗表示するラベル
-    private JLabel recordLabel;
+    private JLabel winLabel;
+    private JLabel loseLabel;
+    private JLabel drawLabel;
+    private JLabel rateLabel;
 
 
 
@@ -41,10 +44,30 @@ public class RecordScreen extends JPanel implements ActionListener {
             returnButton.setBounds(800,500,80,50);
             this.add(returnButton);
 
-            recordLabel = new JLabel("");
-            recordLabel.setFont(font1);
-            recordLabel.setBounds(700, 60, 250, 50);
-            this.add(recordLabel);
+            winLabel = new JLabel("");
+            Font font2=new Font("SansSerif",Font.BOLD,20);
+            winLabel.setFont(font2);
+            winLabel.setForeground(Color.WHITE);
+            winLabel.setBounds(700, 60, 250, 70);
+            this.add(winLabel);
+
+            loseLabel = new JLabel("");
+            loseLabel.setFont(font2);
+            loseLabel.setForeground(Color.WHITE);
+            loseLabel.setBounds(700, 130, 250, 70);
+            this.add(loseLabel);
+
+            drawLabel = new JLabel("");
+            drawLabel.setFont(font2);
+            drawLabel.setForeground(Color.WHITE);
+            drawLabel.setBounds(700, 200, 250, 70);
+            this.add(drawLabel);
+
+            rateLabel = new JLabel("");
+            rateLabel.setFont(font2);
+            rateLabel.setForeground(Color.WHITE);
+            rateLabel.setBounds(700, 270, 250, 70);
+            this.add(rateLabel);
 
 
             String imagePath ="Numeron-Record.png";
@@ -67,12 +90,15 @@ public class RecordScreen extends JPanel implements ActionListener {
     }
 
     public void UpdateRecord(int rate,int winCount,int loseCount,int drawCount){
-         this.rate=rate;
-         this.winCount=winCount;
-         this.loseCount=loseCount;
-         this.drawCount=drawCount;
+        this.rate=rate;
+        this.winCount=winCount;
+        this.loseCount=loseCount;
+        this.drawCount=drawCount;
 
-         recordLabel.setText("Wins: " + winCount + "  Losses: " + loseCount + "  Draws: " + drawCount + "  Rate: " + rate);
+        winLabel.setText("Wins: " + winCount);
+        loseLabel.setText("Loses:" + loseCount);
+        drawLabel.setText("Draws:" + drawCount);
+        rateLabel.setText("Rate:" + rate);
     }
 
 
@@ -81,4 +107,5 @@ public class RecordScreen extends JPanel implements ActionListener {
             pushReturnButton();
         }
     }
+
 }

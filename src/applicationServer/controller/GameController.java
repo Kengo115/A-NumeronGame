@@ -1,20 +1,26 @@
 package applicationServer.controller;
 
-import applicationServer.entity.*;
+import java.util.Random;
+
+import Message.CallMessage;
+import Message.ItemMessage;
+import Message.ResultMessage;
+import applicationServer.entity.GameTimer;
+import applicationServer.entity.HighAndLow;
+import applicationServer.entity.Item;
+import applicationServer.entity.Player;
+import applicationServer.entity.Slash;
 import applicationServer.entity.Target;
 import databaseServer.controller.DataBaseController;
-import Message.*;
-
-import java.util.Random;
 
 public class GameController {
     int isWinner = 0;
     int turn = 0;
     int rand;
-    Player player1;
-    Player player2;
-    Player firstPlayer; //先攻
-    Player secondPlayer; //後攻
+    Player player1 = null;
+    Player player2 = null;
+    Player firstPlayer = null; //先攻
+    Player secondPlayer = null; //後攻
     Item HighAndLow = new HighAndLow();
     Item Slash = new Slash();
     Item Target = new Target();
@@ -29,6 +35,10 @@ public class GameController {
     public GameController(Player player1, Player player2){
         this.player1 = player1;
         this.player2 = player2;
+        System.out.println("初期値確認");
+        System.out.println("["+player1.getUserName()+","+player1.getMyNumber()+","+player1.getTurnOrder()+","+player1.getEAT()+"]");
+        System.out.println("初期値確認");
+        System.out.println("["+player2.getUserName()+","+player2.getMyNumber()+","+player2.getTurnOrder()+","+player2.getEAT()+"]");
         determineTurnOrder();
     }
 
@@ -65,10 +75,15 @@ public class GameController {
             firstPlayer = player2;
             secondPlayer = player1;
         }
+        gameTimer.startTimer();
     }
 
     /** CALL結果を渡すメソッド*/
     public CallMessage determineEATAndBITE(CallMessage message){
+
+        //タイマーをリセットする
+        gameTimer.resetTimer();
+
         int EAT = 0;
         int BITE = 0;
         if(message.username.equals(player1.getUserName())){
@@ -103,7 +118,6 @@ public class GameController {
             player2.setEATAndBITE(EAT, BITE);
         }
         CallMessage callMessage = new CallMessage(message.demandType, message.username, message.callNumber, EAT, BITE);
-
         return callMessage;
     }
 
@@ -124,20 +138,42 @@ public class GameController {
         System.out.println("firstPlayerEat"+firstPlayer.getEAT());
         System.out.println("secondPlayerEat"+secondPlayer.getEAT());
 
+        DataBaseController dataBaseController = new DataBaseController();
+
         // ターンが終了した場合
         if (turn % 2 != 0) {
             switch (isWinner) {
                 case 1:
                     // 先攻が勝利した時の記述を書く
                     System.out.println("先攻が勝利しました。");
+                    String insertQuery1 = "UPDATE UserList SET rate = rate + 100 WHERE UserName = '" + firstPlayer.getUserName() + "'";
+                    String insertQuery2 = "UPDATE UserList SET rate = rate - 100 WHERE UserName = '" + secondPlayer.getUserName() + "'";
+                    String insertQuery3 = "UPDATE UserList SET  winCount = winCount + 1 WHERE UserName = '" + firstPlayer.getUserName() + "'";
+                    String insertQuery4 = "UPDATE UserList SET loseCount = loseCount + 1 WHERE UserName = '" + secondPlayer.getUserName() + "'";
+                    dataBaseController.executeUpdate(insertQuery1);
+                    dataBaseController.executeUpdate(insertQuery2);
+                    dataBaseController.executeUpdate(insertQuery3);
+                    dataBaseController.executeUpdate(insertQuery4);
                     return true;
                 case 2:
                     // 後攻が勝利した時の記述を書く
                     System.out.println("後攻が勝利しました。");
+                    String insertQuery5 = "UPDATE UserList SET rate = rate + 100 WHERE UserName = '" + secondPlayer.getUserName() + "'";
+                    String insertQuery6 = "UPDATE UserList SET rate = rate - 100 WHERE UserName = '" + firstPlayer.getUserName() + "'";
+                    String insertQuery7 = "UPDATE UserList SET  winCount = winCount + 1 WHERE UserName = '" + secondPlayer.getUserName() + "'";
+                    String insertQuery8 = "UPDATE UserList SET loseCount = loseCount + 1 WHERE UserName = '" + firstPlayer.getUserName() + "'";
+                    dataBaseController.executeUpdate(insertQuery5);
+                    dataBaseController.executeUpdate(insertQuery6);
+                    dataBaseController.executeUpdate(insertQuery7);
+                    dataBaseController.executeUpdate(insertQuery8);
                     return true;
                 case 3:
                     // 引き分けした時の記述を書く
                     System.out.println("引き分けです。");
+                    String insertQuery9 = "UPDATE UserList SET drawCount = drawCount + 1 WHERE UserName = '" + firstPlayer.getUserName() + "'";
+                    String insertQuery10 = "UPDATE UserList SET drawCount = drawCount + 1 WHERE UserName = '" +  secondPlayer.getUserName() + "'";
+                    dataBaseController.executeUpdate(insertQuery9);
+                    dataBaseController.executeUpdate(insertQuery10);
                     return true;
                 default:
                     // ゲームが続行中
@@ -150,10 +186,17 @@ public class GameController {
     }
     /**ターンを更新する*/
     public void changeTurn(){
+
         turn++;
+
+        //タイマーを開始する
+        gameTimer.startTimer();
     }
     /**自分の設定ナンバーを決める*/
     public void setNumber(String player, String number){
+        //タイマーをリセットする
+        gameTimer.resetTimer();
+
         if(player.equals(player1.getUserName())){
             this.player1.setMyNumber(number);
             this.player2.setOpponentNumber(number);
@@ -170,23 +213,32 @@ public class GameController {
      * 正常に処理が成功した場合tureを返す
      * 型や返り値、SQL文の仕様が変わる可能性大
      */
-    public boolean handleTimeout(String errorPlayer,String normalPlayer){
+    public void handleTimeout(String errorPlayer,String normalPlayer){
+
+        //デバック
+        System.out.println("handleTimeout到達");
 
         DataBaseController dataBaseController = new DataBaseController();
-        // 制限時間を超えたユーザの敗北数を1増やす
+        // 制限時間を超えたユーザの敗北数を1増やしレートを下げる
         String updateLoseQuery = "UPDATE UserList SET loseCount = loseCount + 1 WHERE UserName = '"+errorPlayer+"'";
-        boolean TF1 = dataBaseController.executeUpdate(updateLoseQuery);
 
-        // 相手ユーザの勝利数を1増やす
+        String rateDownQuery = "UPDATE UserList SET rate = rate - 100 WHERE UserName = '" + errorPlayer + "'";
+        boolean TF1 = dataBaseController.executeUpdate(updateLoseQuery);
+        dataBaseController.executeUpdate(rateDownQuery);
+
+        // 相手ユーザの勝利数を1増やしレートを上げる
         String updateWinQuery = "UPDATE UserList SET winCount = winCount + 1 WHERE UserName = '"+normalPlayer+"'";
+        String rateUpQuery = "UPDATE UserList SET rate = rate + 100 WHERE UserName = '" + normalPlayer + "'";
         boolean TF2 = dataBaseController.executeUpdate(updateWinQuery);
+        dataBaseController.executeUpdate(rateUpQuery);
 
         // 制限時間を超えたユーザをログアウト状態にする
         String updateLogoutQuery = "UPDATE UserList SET isLoggedIn = false WHERE UserName = '"+errorPlayer+"'";
         boolean TF3 = dataBaseController.executeUpdate(updateLogoutQuery);
 
-        if((TF1 && TF2 && TF3) == true) return true;
-        else return false;
+        //デバック
+        System.out.println("SQL処理終了");
+
     }
     /**
      * 使用するアイテムに応じてアイテムクラスを呼び出すメソッド

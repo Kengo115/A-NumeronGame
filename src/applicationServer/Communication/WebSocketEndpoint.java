@@ -103,7 +103,7 @@ public class WebSocketEndpoint {
 
 
                 //対戦相手に設定ナンバーを送ったことを送信
-                sendMessageToOpponent(applicationController.getOpponentUsername(setNumberMessage.username),message);
+                sendMessageToOpponent(setNumberMessage.username,message);
                 break;
             case "Call":
                 // Callの場合の処理
@@ -115,10 +115,8 @@ public class WebSocketEndpoint {
                 applicationController.changeTurn(callMessage.username);
                 messageToJson  = gson.toJson(callMessage);
                 sendMessage(session,messageToJson);
-                //対戦相手の名前を調べる
-                opponentUsername = applicationController.getOpponentUsername(callMessage.username);
                 //対戦相手にも結果を送る
-                sendMessageToOpponent(opponentUsername,messageToJson);
+                sendMessageToOpponent(callMessage.username,messageToJson);
                 break;
             case "Item":
                 // Itemの場合の処理
@@ -130,10 +128,8 @@ public class WebSocketEndpoint {
                 itemMessage = applicationController.useItem(itemMessage);
                 messageToJson = gson.toJson(itemMessage);
                 sendMessage(session,messageToJson);
-                //対戦相手の名前を調べる
-                opponentUsername = applicationController.getOpponentUsername(itemMessage.username);
                 //対戦相手にも結果を送る
-                sendMessageToOpponent(opponentUsername,messageToJson);
+                sendMessageToOpponent(itemMessage.username,messageToJson);
                 break;
             default:
                 System.out.println("無効な要求です");
@@ -143,10 +139,17 @@ public class WebSocketEndpoint {
 
     @OnClose//切断時の処理
     public void onClose(Session session) {
+
         System.out.println("[WebSocketServer] onClose:" + session.getId());
         //このセッションのユーザー名を調べる
         for (ConnectedUser connectedUser : connectedUserList) {
             if (connectedUser.session.equals(session)) {
+                //この切断が予定されているものかどうか判断する
+                if(connectedUser.close) {
+                    //予定されているものなら何もしない
+                    return;
+                }
+
                 String closeUsername = connectedUser.username;
                 //対戦相手を探す
                 String opponentUsername = applicationController.getOpponentUsername(closeUsername);
@@ -162,18 +165,19 @@ public class WebSocketEndpoint {
                 System.out.println("handleTimeout完了");
 
                 //対戦相手にエラーメッセージを送る
-                sendMessageToOpponent(opponentUsername,gson.toJson(errorGameEndMessage));
+                sendMessageToOpponent(closeUsername,gson.toJson(errorGameEndMessage));
                 System.out.println("対戦相手にエラーメッセージを送る");
-
-                //対戦相手の切断処理を行う
-                disconnectConnection(opponentUsername);
 
                 //対象のユーザーを接続ユーザーのリストから外す
                 connectedUserList.remove(connectedUser);
 
+                //対戦相手の切断処理を行う
+                disconnectConnection(opponentUsername);
+
                 //部屋を解散する
                 applicationController.deleteRoom(applicationController.getPlayer(closeUsername));
                 System.out.println("部屋を解散する");
+                return;
             }
         }
 
@@ -202,9 +206,9 @@ public class WebSocketEndpoint {
     }
 
     //対戦相手にStringに変換したメッセージを送る
-    public void sendMessageToOpponent(String opponentUsername , String messageToJson) {
+    public void sendMessageToOpponent(String username , String messageToJson) {
         //対戦相手のセッションを調べる
-        Session opponentSession = getSession(opponentUsername);
+        Session opponentSession = getSession(applicationController.getOpponentUsername(username));
         sendMessage(opponentSession,messageToJson);
     }
 
@@ -264,6 +268,11 @@ public class WebSocketEndpoint {
     //サーバ側から対象のユーザ名のユーザを切断する
     public void disconnectConnection(String username) {
         try {
+            for(ConnectedUser connectedUser : connectedUserList) {
+                if(connectedUser.username.equals(username)) {
+                    connectedUser.close = true;
+                }
+            }
             getSession(username).close();
             connectedUserList.removeIf(connectedUser -> connectedUser.username.equals(username));
         } catch (IOException e) {

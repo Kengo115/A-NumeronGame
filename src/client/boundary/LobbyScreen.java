@@ -93,7 +93,6 @@ public class LobbyScreen extends JPanel implements ActionListener{
 	}
 	public void pushRuleButton() {
 		//ここにルール説明ボタンが押された後の処理を書く
-		controller.getRecord();
 		controller.screenTransition("rule");
 	}
 	public void pushMatchingButton() {
@@ -103,7 +102,7 @@ public class LobbyScreen extends JPanel implements ActionListener{
 	}
 	public void pushRewardButton() {
 		//ここにユーザ情報ボタンが押された後の処理を書く
-		controller.screenTransition("reward");
+		controller.getRecord();
 	}
 	
 	public void actionPerformed(ActionEvent ae) {

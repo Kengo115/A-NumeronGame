@@ -1,23 +1,31 @@
 package client.boundary;
 
-import client.controller.Controller;
-import applicationServer.controller.GameController;
-
-import javax.swing.*;
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.UIManager;
+
+import client.controller.Controller;
 
 
 public class ResultScreen extends JPanel implements ActionListener{
     JButton returnButton;
     Controller controller;
-    GameController gamecontroller;
     private Image backgroundImage;
 
     public String username1;
     public String username2;
     public String winUser;
+    public int result;
 
     //勝者を表示するラベル
     private JLabel winLabel;
@@ -27,7 +35,6 @@ public class ResultScreen extends JPanel implements ActionListener{
     public ResultScreen(Controller controller){
         super();
         this.controller=controller;
-        this.gamecontroller= gamecontroller;
         try{
             this.setLayout(null);
 
@@ -52,32 +59,6 @@ public class ResultScreen extends JPanel implements ActionListener{
             winLabel.setFont(font1);
             winLabel.setBounds(430, 470, 120, 30);
             this.add(winLabel);
-
-            //isWinnerが１であれば先行が勝ち、２で後攻が勝ち、３であれば引き分け
-            //turnが0であれば先行、１であれば後攻
-            if(gamecontroller.getTurn()==0){
-                if (gamecontroller.getIsWinner() == 1) {
-                    String imagePath = "Numeron-Reselt-Win.png";
-                    backgroundImage = new ImageIcon(getClass().getResource(imagePath)).getImage();
-                } else if (gamecontroller.getIsWinner() == 2) {
-                    String imagePath = "Numeron-Reselt-Lose.png";
-                    backgroundImage = new ImageIcon(getClass().getResource(imagePath)).getImage();
-                } else {
-                    String imagePath = "Numeron-Reselt-Draw.png";
-                    backgroundImage = new ImageIcon(getClass().getResource(imagePath)).getImage();
-                }
-            }else {
-                if (gamecontroller.getIsWinner() == 1) {
-                    String imagePath = "Numeron-Reselt-Lose.png";
-                    backgroundImage = new ImageIcon(getClass().getResource(imagePath)).getImage();
-                } else if (gamecontroller.getIsWinner() == 2) {
-                    String imagePath = "Numeron-Reselt-Win.png";
-                    backgroundImage = new ImageIcon(getClass().getResource(imagePath)).getImage();
-                } else {
-                    String imagePath = "Numeron-Reselt-Draw.png";
-                    backgroundImage = new ImageIcon(getClass().getResource(imagePath)).getImage();
-                }
-            }
         }catch(Exception ex){
             ex.printStackTrace();
             JOptionPane.showMessageDialog(this,"ERROR : " + ex.toString());
@@ -94,11 +75,21 @@ public class ResultScreen extends JPanel implements ActionListener{
         controller.screenTransition("lobby");
     }
 
-    public void displayResult(String username1,String username2,String winUser){
+    public void displayResult(String username1,String username2,String winUser,int result){
         this.username1=username1;
         this.username2=username2;
         this.winUser=winUser;
-
+        this.result=result;
+        if (result == 1) {
+        	String imagePath = "Numeron-Reselt-Win.png";
+        	backgroundImage = new ImageIcon(getClass().getResource(imagePath)).getImage();
+        } else if (result == 2) {
+        	String imagePath = "Numeron-Reselt-Lose.png";
+        	backgroundImage = new ImageIcon(getClass().getResource(imagePath)).getImage();
+        } else {
+        	String imagePath = "Numeron-Reselt-Draw.png";
+        	backgroundImage = new ImageIcon(getClass().getResource(imagePath)).getImage();
+        }
         winLabel.setText("Win: " + winUser);
     }
 
